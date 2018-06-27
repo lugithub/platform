@@ -1,12 +1,11 @@
-import 'rxjs/add/operator/distinctUntilChanged';
-import 'rxjs/add/operator/map';
 import { cold } from 'jasmine-marbles';
 import {
   createSelector,
   createFeatureSelector,
   defaultMemoize,
   createSelectorFactory,
-} from '../';
+} from '@ngrx/store';
+import { map, distinctUntilChanged } from 'rxjs/operators';
 
 describe('Selectors', () => {
   let countOne: number;
@@ -229,7 +228,10 @@ describe('Selectors', () => {
         a: firstValue,
         b: secondValue,
       });
-      const featureState$ = state$.map(featureSelector).distinctUntilChanged();
+      const featureState$ = state$.pipe(
+        map(featureSelector),
+        distinctUntilChanged()
+      );
 
       expect(featureState$).toBeObservable(expected$);
     });

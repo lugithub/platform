@@ -1,7 +1,11 @@
-import { createSelector, createFeatureSelector } from '@ngrx/store';
-import * as fromSearch from './search';
-import * as fromBooks from './books';
-import * as fromCollection from './collection';
+import {
+  createSelector,
+  createFeatureSelector,
+  ActionReducerMap,
+} from '@ngrx/store';
+import * as fromSearch from './search.reducer';
+import * as fromBooks from './books.reducer';
+import * as fromCollection from './collection.reducer';
 import * as fromRoot from '../../reducers';
 
 export interface BooksState {
@@ -14,7 +18,7 @@ export interface State extends fromRoot.State {
   books: BooksState;
 }
 
-export const reducers = {
+export const reducers: ActionReducerMap<BooksState> = {
   search: fromSearch.reducer,
   books: fromBooks.reducer,
   collection: fromCollection.reducer,
@@ -66,7 +70,7 @@ export const getSelectedBookId = createSelector(
  * commonly used selector functions including
  * getting all ids in the record set, a dictionary
  * of the records by id, an array of records and
- * the total number of records. This reducers boilerplate
+ * the total number of records. This reduces boilerplate
  * in selecting records from the entity state.
  */
 export const {

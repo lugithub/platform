@@ -4,10 +4,10 @@
 
 A method for returning a generic entity adapter for a single entity state collection. The
 returned adapter provides many [methods](#adapter-methods) for performing operations
-against the collection type. The method takes an object for configuration with 2 properties.
+against the collection type. The method takes an object with 2 properties for configuration.
 
- - `selectId`: A `method` for selecting the primary id for the collection
- - `sortComparer`: A compare function used to [sort](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort) the collection. The comparer function is only needed if the collection needs to be sorted before being displayed. Set to `false` to leave the collection unsorted, which is more performant during CRUD operations.
+* `selectId`: A `method` for selecting the primary id for the collection.
+* `sortComparer`: A compare function used to [sort](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort) the collection. The comparer function is only needed if the collection needs to be sorted before being displayed. Set to `false` to leave the collection unsorted, which is more performant during CRUD operations.
 
 Usage:
 
@@ -60,11 +60,11 @@ export interface State extends EntityState<User> {
 
 export const initialState: State = adapter.getInitialState({
   // additional entity state properties
-  selectedUserId: null
+  selectedUserId: null,
 });
 
 export function reducer(state = initialState, action): State {
-  switch(action.type) {
+  switch (action.type) {
     default: {
       return state;
     }
@@ -86,6 +86,8 @@ state if no changes were made.
 * `removeAll`: Clear entity collection
 * `updateOne`: Update one entity in the collection
 * `updateMany`: Update multiple entities in the collection
+* `upsertOne`: Add or Update one entity in the collection
+* `upsertMany`: Add or Update multiple entities in the collection
 
 Usage:
 
@@ -109,12 +111,14 @@ import { User } from './user.model';
 export enum UserActionTypes {
   LOAD_USERS = '[User] Load Users',
   ADD_USER = '[User] Add User',
+  UPSERT_USER = '[User] Upsert User',
   ADD_USERS = '[User] Add Users',
+  UPSERT_USERS = '[User] Upsert Users',
   UPDATE_USER = '[User] Update User',
   UPDATE_USERS = '[User] Update Users',
   DELETE_USER = '[User] Delete User',
   DELETE_USERS = '[User] Delete Users',
-  CLEAR_USERS = '[User] Clear Users'
+  CLEAR_USERS = '[User] Clear Users',
 }
 
 export class LoadUsers implements Action {
@@ -129,8 +133,20 @@ export class AddUser implements Action {
   constructor(public payload: { user: User }) {}
 }
 
+export class UpsertUser implements Action {
+  readonly type = UserActionTypes.UPSERT_USER;
+
+  constructor(public payload: { user: User }) {}
+}
+
 export class AddUsers implements Action {
   readonly type = UserActionTypes.ADD_USERS;
+
+  constructor(public payload: { users: User[] }) {}
+}
+
+export class UpsertUsers implements Action {
+  readonly type = UserActionTypes.UPSERT_USERS;
 
   constructor(public payload: { users: User[] }) {}
 }
@@ -163,22 +179,25 @@ export class ClearUsers implements Action {
   readonly type = UserActionTypes.CLEAR_USERS;
 }
 
-export type UserActions =
- LoadUsers
- | AddUser
- | AddUsers
- | UpdateUser
- | UpdateUsers
- | DeleteUser
- | DeleteUsers
- | ClearUsers;
+export type UserActionsUnion =
+  | LoadUsers
+  | AddUser
+  | UpsertUser
+  | AddUsers
+  | UpsertUsers
+  | UpdateUser
+  | UpdateUsers
+  | DeleteUser
+  | DeleteUsers
+  | ClearUsers;
 ```
 
 `user.reducer.ts`
+
 ```ts
 import { EntityState, EntityAdapter, createEntityAdapter } from '@ngrx/entity';
 import { User } from './user.model';
-import { UserActions, UserActionTypes } from './user.actions';
+import { UserActionsUnion, UserActionTypes } from './user.actions';
 
 export interface State extends EntityState<User> {
   // additional entities state properties
@@ -189,20 +208,25 @@ export const adapter: EntityAdapter<User> = createEntityAdapter<User>();
 
 export const initialState: State = adapter.getInitialState({
   // additional entity state properties
-  selectedUserId: null
+  selectedUserId: null,
 });
 
-export function reducer(
-  state = initialState,
-  action: UserActions
-): State {
+export function reducer(state = initialState, action: UserActionsUnion): State {
   switch (action.type) {
     case UserActionTypes.ADD_USER: {
       return adapter.addOne(action.payload.user, state);
     }
 
+    case UserActionTypes.UPSERT_USER: {
+      return adapter.upsertOne(action.payload.user, state);
+    }
+
     case UserActionTypes.ADD_USERS: {
       return adapter.addMany(action.payload.users, state);
+    }
+
+    case UserActionTypes.UPSERT_USERS: {
+      return adapter.upsertMany(action.payload.users, state);
     }
 
     case UserActionTypes.UPDATE_USER: {
@@ -248,7 +272,7 @@ export const {
   selectAll: selectAllUsers,
 
   // select the total user count
-  selectTotal: selectUserTotal
+  selectTotal: selectUserTotal,
 } = adapter.getSelectors();
 ```
 
@@ -263,7 +287,11 @@ Usage:
 `reducers/index.ts`
 
 ```ts
-import { createSelector, createFeatureSelector, ActionReducerMap } from '@ngrx/store';
+import {
+  createSelector,
+  createFeatureSelector,
+  ActionReducerMap,
+} from '@ngrx/store';
 import * as fromUser from './user.reducer';
 
 export interface State {
@@ -271,16 +299,31 @@ export interface State {
 }
 
 export const reducers: ActionReducerMap<State> = {
-  users: fromUser.reducer
+  users: fromUser.reducer,
 };
 
 export const selectUserState = createFeatureSelector<fromUser.State>('users');
 
-export const selectUserIds = createSelector(selectUserState, fromUser.selectUserIds);
-export const selectUserEntities = createSelector(selectUserState, fromUser.selectUserEntities);
-export const selectAllUsers = createSelector(selectUserState, fromUser.selectAllUsers);
-export const selectUserTotal = createSelector(selectUserState, fromUser.selectUserTotal);
-export const selectCurrentUserId = createSelector(selectUserState, fromUser.getSelectedUserId);
+export const selectUserIds = createSelector(
+  selectUserState,
+  fromUser.selectUserIds
+);
+export const selectUserEntities = createSelector(
+  selectUserState,
+  fromUser.selectUserEntities
+);
+export const selectAllUsers = createSelector(
+  selectUserState,
+  fromUser.selectAllUsers
+);
+export const selectUserTotal = createSelector(
+  selectUserState,
+  fromUser.selectUserTotal
+);
+export const selectCurrentUserId = createSelector(
+  selectUserState,
+  fromUser.getSelectedUserId
+);
 
 export const selectCurrentUser = createSelector(
   selectUserEntities,

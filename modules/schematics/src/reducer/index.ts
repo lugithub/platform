@@ -1,4 +1,3 @@
-import { normalize } from '@angular-devkit/core';
 import {
   Rule,
   SchematicContext,
@@ -14,36 +13,28 @@ import {
   template,
   url,
 } from '@angular-devkit/schematics';
-import 'rxjs/add/operator/merge';
 import * as ts from 'typescript';
-import * as stringUtils from '../strings';
-import { addProviderToModule, addImportToModule } from '../utility/ast-utils';
-import { InsertChange, Change } from '../utility/change';
 import {
-  buildRelativePath,
+  getProjectPath,
   findModuleFromOptions,
-} from '../utility/find-module';
-import { Schema as ReducerOptions } from './schema';
-import { insertImport } from '../utility/route-utils';
-import * as path from 'path';
-import {
-  addReducerToStateInferface,
-  addReducerToActionReducerMap,
+  stringUtils,
   addReducerToState,
   addReducerImportToNgModule,
-} from '../utility/ngrx-utils';
+  parseName,
+} from '@ngrx/schematics/schematics-core';
+import { Schema as ReducerOptions } from './schema';
 
 export default function(options: ReducerOptions): Rule {
-  options.path = options.path ? normalize(options.path) : options.path;
-  const sourceDir = options.sourceDir;
-  if (!sourceDir) {
-    throw new SchematicsException(`sourceDir option is required.`);
-  }
-
   return (host: Tree, context: SchematicContext) => {
+    options.path = getProjectPath(host, options);
+
     if (options.module) {
       options.module = findModuleFromOptions(host, options);
     }
+
+    const parsedPath = parseName(options.path, options.name);
+    options.name = parsedPath.name;
+    options.path = parsedPath.path;
 
     const templateSource = apply(url('./files'), [
       options.spec ? noop() : filter(path => !path.endsWith('__spec.ts')),
@@ -56,8 +47,8 @@ export default function(options: ReducerOptions): Rule {
           ),
         ...(options as object),
         dot: () => '.',
-      }),
-      move(sourceDir),
+      } as any),
+      move(parsedPath.path),
     ]);
 
     return chain([

@@ -1,6 +1,7 @@
 import { Action } from '@ngrx/store';
 
 export const PERFORM_ACTION = 'PERFORM_ACTION';
+export const REFRESH = 'REFRESH';
 export const RESET = 'RESET';
 export const ROLLBACK = 'ROLLBACK';
 export const COMMIT = 'COMMIT';
@@ -14,7 +15,7 @@ export const IMPORT_STATE = 'IMPORT_STATE';
 export class PerformAction implements Action {
   readonly type = PERFORM_ACTION;
 
-  constructor(public action: Action, public timestamp?: number) {
+  constructor(public action: Action, public timestamp: number) {
     if (typeof action.type === 'undefined') {
       throw new Error(
         'Actions may not have an undefined "type" property. ' +
@@ -24,22 +25,26 @@ export class PerformAction implements Action {
   }
 }
 
+export class Refresh implements Action {
+  readonly type = REFRESH;
+}
+
 export class Reset implements Action {
   readonly type = RESET;
 
-  constructor(public timestamp?: number) {}
+  constructor(public timestamp: number) {}
 }
 
 export class Rollback implements Action {
   readonly type = ROLLBACK;
 
-  constructor(public timestamp?: number) {}
+  constructor(public timestamp: number) {}
 }
 
 export class Commit implements Action {
   readonly type = COMMIT;
 
-  constructor(public timestamp?: number) {}
+  constructor(public timestamp: number) {}
 }
 
 export class Sweep implements Action {
@@ -82,6 +87,7 @@ export class ImportState implements Action {
 
 export type All =
   | PerformAction
+  | Refresh
   | Reset
   | Rollback
   | Commit

@@ -1,6 +1,6 @@
 {
   "name": "@ngrx/schematics",
-  "version": "5.0.0",
+  "version": "0.0.0-PLACEHOLDER",
   "description": "NgRx Schematics for Angular",
   "repository": {
     "type": "git",
@@ -20,5 +20,13 @@
     "url": "https://github.com/ngrx/platform/issues"
   },
   "homepage": "https://github.com/ngrx/platform#readme",
-  "schematics": "./collection.json"
+  "schematics": "./collection.json",
+  "ng-update": {
+    "packageGroup": "NG_UPDATE_PACKAGE_GROUP",
+    "migrations": "NG_UPDATE_MIGRATIONS"
+  },
+  "peerDependencies": {
+    "@angular-devkit/core": "NG_DEVKIT_VERSION",
+    "@angular-devkit/schematics": "NG_DEVKIT_VERSION"
+  }
 }

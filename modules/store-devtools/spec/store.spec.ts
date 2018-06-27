@@ -1,20 +1,17 @@
-import 'rxjs/add/operator/take';
-import { Subscription } from 'rxjs/Subscription';
-import { ReflectiveInjector } from '@angular/core';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
 import {
-  StoreModule,
-  Store,
-  StateObservable,
-  ActionReducer,
   Action,
+  ActionReducer,
   ReducerManager,
+  StateObservable,
+  Store,
+  StoreModule,
 } from '@ngrx/store';
+
 import {
+  LiftedState,
   StoreDevtools,
   StoreDevtoolsModule,
-  LiftedState,
-  StoreDevtoolsConfig,
   StoreDevtoolsOptions,
 } from '../';
 import { IS_EXTENSION_OR_MONITOR_PRESENT } from '../src/instrument';
@@ -146,7 +143,7 @@ describe('Store Devtools', () => {
       fixture.cleanup();
     });
 
-    it("should alias devtools unlifted state to Store's state", () => {
+    it(`should alias devtools unlifted state to Store's state`, () => {
       expect(devtools.state).toBe(fixture.state as any);
     });
 
@@ -178,6 +175,24 @@ describe('Store Devtools', () => {
 
       devtools.rollback();
       expect(getState()).toBe(2);
+    });
+
+    it('should refresh to show current state as is', () => {
+      // actionId 0 = @@INIT
+      store.dispatch({ type: 'INCREMENT' });
+      store.dispatch({ type: 'INCREMENT' });
+      store.dispatch({ type: 'INCREMENT' });
+      store.dispatch({ type: 'INCREMENT' });
+
+      expect(getState()).toBe(4);
+      expect(getLiftedState().stagedActionIds).toEqual([0, 1, 2, 3, 4]);
+      expect(getLiftedState().skippedActionIds).toEqual([]);
+
+      devtools.refresh();
+
+      expect(getState()).toBe(4);
+      expect(getLiftedState().stagedActionIds).toEqual([0, 1, 2, 3, 4]);
+      expect(getLiftedState().skippedActionIds).toEqual([]);
     });
 
     it('should reset to initial state', () => {

@@ -1,4 +1,3 @@
-import { normalize } from '@angular-devkit/core';
 import {
   Rule,
   SchematicsException,
@@ -14,22 +13,24 @@ import {
   Tree,
   SchematicContext,
 } from '@angular-devkit/schematics';
-import * as stringUtils from '../strings';
-import { Schema as EntityOptions } from './schema';
 import {
+  stringUtils,
   addReducerToState,
   addReducerImportToNgModule,
-} from '../utility/ngrx-utils';
-import { findModuleFromOptions } from '../utility/find-module';
+  getProjectPath,
+  findModuleFromOptions,
+  parseName,
+} from '@ngrx/schematics/schematics-core';
+import { Schema as EntityOptions } from './schema';
 
 export default function(options: EntityOptions): Rule {
-  options.path = options.path ? normalize(options.path) : options.path;
-  const sourceDir = options.sourceDir;
-  if (!sourceDir) {
-    throw new SchematicsException(`sourceDir option is required.`);
-  }
-
   return (host: Tree, context: SchematicContext) => {
+    options.path = getProjectPath(host, options);
+
+    const parsedPath = parseName(options.path, options.name);
+    options.name = parsedPath.name;
+    options.path = parsedPath.path;
+
     if (options.module) {
       options.module = findModuleFromOptions(host, options);
     }
@@ -39,10 +40,16 @@ export default function(options: EntityOptions): Rule {
       template({
         ...stringUtils,
         'if-flat': (s: string) => (options.flat ? '' : s),
+        'group-actions': (name: string) =>
+          stringUtils.group(name, options.group ? 'actions' : ''),
+        'group-models': (name: string) =>
+          stringUtils.group(name, options.group ? 'models' : ''),
+        'group-reducers': (s: string) =>
+          stringUtils.group(s, options.group ? 'reducers' : ''),
         ...(options as object),
         dot: () => '.',
-      }),
-      move(sourceDir),
+      } as any),
+      move(parsedPath.path),
     ]);
 
     return chain([
